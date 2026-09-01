@@ -1,19 +1,16 @@
 # Source ontologies — 954MB / 659MB, far over GitHub's 100MB limit
 *.owl
 
-# Derived extracts and built indices (regenerate with the scripts)
+# Intermediate TSV extracts (regenerate with owl_extract.py)
 extract/
-weamrag_in/
-weamrag_smoke/
 
-# Binary index artifacts
+# Binary index artifacts (regenerate with build_graph.py)
 *.db
 *.sqlite
 *.graphml
 
 # Logs
 *.log
-.full_build.log
 
 __pycache__/
 *.pyc
