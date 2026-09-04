@@ -1,0 +1,178 @@
+[
+  {
+    "probe": "HLA-A",
+    "question": "What is the gene HLA-A associated with? List the specific genes involved.",
+    "targets": [
+      "HLA-A",
+      "HLA-E",
+      "HLA-H",
+      "HLA-J"
+    ],
+    "simple": {
+      "n_nodes": 48,
+      "secs": 39.8,
+      "hits": {
+        "HLA-A": [],
+        "HLA-E": [],
+        "HLA-H": [],
+        "HLA-J": []
+      },
+      "distinct_node_groups": 0,
+      "answer": "Based on the provided context, there is no direct information about the gene HLA-A being associated with any specific entity or process. However, I can suggest that you look for relationships involving \"HLA-A\" in the provided relationship paths.\n\nUpon reviewing the provided relationship paths, I found a few mentions of genes related to HLA-A:\n\n* relationship<|>HLA-A [hetionet:632]<|>dendrite [hetionet:GO_0030425]<|>HLA-A [hetionet:632] participates dendrite [hetionet:GO_0030425].\n* relationship<|>HLA-A [hetionet:632]<|>BGLAP [hetionet:632]<|>HLA-A [hetionet:632] participates BGLAP [hetionet:632].\n\nHowever, these relationships do not explicitly state that HLA-A is associated with any specific entity or process. If you need more information about the gene HLA-A, I recommend searching for additional context or resources related to this gene.\n\nIf you would like me to analyze a different relationship between Aggregation A and Aggregation B based on the provided input, please let me know!"
+    },
+    "full": {
+      "n_nodes": 52,
+      "secs": 63.2,
+      "hits": {
+        "HLA-A": [],
+        "HLA-E": [],
+        "HLA-H": [],
+        "HLA-J": []
+      },
+      "distinct_node_groups": 0,
+      "answer": "Based on the context, I can provide information about the relationship between Aggregation A and Aggregation B.\n\nHowever, there is no mention of a gene named \"HLA-A\" in the provided text. But I can tell you that HLA-A is a human leukocyte antigen (HLA) gene that plays a crucial role in the immune system.\n\nIf you would like to know more about the relationship between Aggregation A and Aggregation B, please let me know which specific aggregations you are interested in."
+    }
+  },
+  {
+    "probe": "Atracurium",
+    "question": "What is Atracurium and what does it interact with? Is Atracurium the same drug as Cisatracurium?",
+    "targets": [
+      "Atracurium",
+      "Cisatracurium"
+    ],
+    "simple": {
+      "n_nodes": 43,
+      "secs": 0.7,
+      "hits": {
+        "Atracurium": [],
+        "Cisatracurium": []
+      },
+      "distinct_node_groups": 0,
+      "answer": "Based on the provided context, I can answer your question.\n\nAtracurium is mentioned in the following relationship:\n\nrelationship<|>Atracurium [hetionet:DB00458]<|>CYP3A7-CYP3A51P [hetionet:100861540]<|>Atracurium [hetionet:DB00458] binds CYP3A7-CYP3A51P [hetionet:100861540].\n\nAs for what Atracurium interacts with, it is stated to bind with CYP3A7-CYP3A51P.\n\nRegarding the question of whether Atracurium is the same drug as Cisatracurium, based on the provided context, I can say that they are not explicitly mentioned as being the same. However, without further information or a clear distinction between the two in the provided text, it cannot be definitively stated whether they are identical or distinct entities."
+    },
+    "full": {
+      "n_nodes": 41,
+      "secs": 0.4,
+      "hits": {
+        "Atracurium": [],
+        "Cisatracurium": []
+      },
+      "distinct_node_groups": 0,
+      "answer": "Based on the provided knowledge graph context, I found the following information:\n\nAtracurium [drkg:DB00542] interacts with Succinylcholine [dbpedia:Succinylcholine].\n\nCisatracurium [drkg:DB01119] is a related entity to Atracurium [drkg:DB00542], but they are not the same drug."
+    }
+  },
+  {
+    "probe": "BRCA2",
+    "question": "What is BRCA2 associated with? Is BRCA2 the same gene as RAD51?",
+    "targets": [
+      "BRCA2",
+      "RAD51"
+    ],
+    "simple": {
+      "n_nodes": 48,
+      "secs": 0.5,
+      "hits": {
+        "BRCA2": [],
+        "RAD51": []
+      },
+      "distinct_node_groups": 0,
+      "answer": "There is no information in the provided context about BRCA2 or its association. Additionally, there is no mention of RAD51 either."
+    },
+    "full": {
+      "n_nodes": 51,
+      "secs": 0.4,
+      "hits": {
+        "BRCA2": [],
+        "RAD51": []
+      },
+      "distinct_node_groups": 0,
+      "answer": "There is no information about BRCA2 and RAD51 in the provided context."
+    }
+  },
+  {
+    "probe": "Galectin",
+    "question": "What is LGALS3 (Galectin-3) associated with? Is it the same gene as LGALS2?",
+    "targets": [
+      "LGALS2",
+      "LGALS3"
+    ],
+    "simple": {
+      "n_nodes": 48,
+      "secs": 0.5,
+      "hits": {
+        "LGALS2": [],
+        "LGALS3": []
+      },
+      "distinct_node_groups": 0,
+      "answer": "There is no information in the provided context about LGALS3 (Galectin-3). However, there is a mention of LGALS2. \n\nLGALS2 is mentioned in the following relationship: \nrelationship<|>cell activation [hetionet:GO_0001775]<|>LGALS2 [hetionet:10493]<|>cell activation [hetionet:GO_0001775] participates LGALS2 [hetionet:10493]."
+    },
+    "full": {
+      "n_nodes": 57,
+      "secs": 0.4,
+      "hits": {
+        "LGALS2": [
+          "LGALS2 [dbpedia:Galectin-3]"
+        ],
+        "LGALS3": []
+      },
+      "distinct_node_groups": 1,
+      "answer": "There is no information provided about LGALS3 (Galectin-3) being associated with anything or its relationship to LGALS2. The context only discusses various relationships between different entities, including anatomical structures, tissues, organs, and genes, but does not mention LGALS3 or LGALS2."
+    }
+  },
+  {
+    "probe": "Estrone",
+    "question": "What is Estrone and is it the same compound as Estropipate?",
+    "targets": [
+      "Estrone",
+      "Estropipate"
+    ],
+    "simple": {
+      "n_nodes": 52,
+      "secs": 0.9,
+      "hits": {
+        "Estrone": [],
+        "Estropipate": []
+      },
+      "distinct_node_groups": 0,
+      "answer": "Based on the provided knowledge graph context, I can find information about Estrone but not directly compare it to Estropipate.\n\nEstrone [hetionet:DB00321] is mentioned in a relationship where it participates in the process \"estrogen receptor binding\" [hetionet:GO_0005122]."
+    },
+    "full": {
+      "n_nodes": 51,
+      "secs": 0.5,
+      "hits": {
+        "Estrone": [],
+        "Estropipate": []
+      },
+      "distinct_node_groups": 0,
+      "answer": "Based on the provided context, I can only find information about \"Estradiol acetate\" being mentioned as Aggregation A. There is no mention of \"Estrone\". However, I can see that there is a relationship between Estradiol valerate/Dienogest and Guacetisal.\n\nAs for Estropipate, it is not explicitly mentioned in the provided context."
+    }
+  },
+  {
+    "probe": "SYT11",
+    "question": "What is SYT11 and is it the same gene as SYT12?",
+    "targets": [
+      "SYT11",
+      "SYT12"
+    ],
+    "simple": {
+      "n_nodes": 48,
+      "secs": 0.5,
+      "hits": {
+        "SYT11": [],
+        "SYT12": []
+      },
+      "distinct_node_groups": 0,
+      "answer": "There is no information in the provided context about SYT11 or SYT12."
+    },
+    "full": {
+      "n_nodes": 39,
+      "secs": 0.4,
+      "hits": {
+        "SYT11": [],
+        "SYT12": []
+      },
+      "distinct_node_groups": 0,
+      "answer": "There is no information in the provided context about SYT11 or SYT12. The context only mentions various aggregations, relationships between entities, and descriptions of biological concepts but does not include any information about these specific genes."
+    }
+  }
+]

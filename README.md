@@ -143,8 +143,9 @@ No API keys.
 - [x] Structural comparison of both merge variants
 - [x] Matched-sample WeamRAG input generation
 - [x] Simple-Merge index built (3,000 nodes)
-- [ ] Full-Merge index — build in progress
-- [ ] End-to-end QA probe results
+- [x] Full-Merge index built (3,057 nodes / 3,977 aggregation edges)
+- [x] Index-level comparison — see Results
+- [ ] QA-level probes — inconclusive as run, see Results
 
 ## Known limitation
 
@@ -163,3 +164,70 @@ classes here have multiple parents.
 | `compare_merge_rag.py` | Identical retrieval probes against both indices |
 
 The two `.owl` inputs (954 MB / 659 MB) are gitignored — both exceed GitHub's 100 MB limit.
+
+
+---
+
+## Results
+
+### Full Merge collapses entities that are not equivalent
+
+Every one of these is a single node in Full Merge and two-or-more separate nodes in
+Simple Merge. All of them are chemically or genetically **distinct**:
+
+| Full Merge node | Absorbed entities | Source IDs | Actually? |
+|---|---|---|---|
+| `Cisatracurium Besylate [dbpedia:Atracurium_besilate]` | Atracurium + Cisatracurium | `DB00732` + `DB00565` | cisatracurium is *one of ten* stereoisomers of atracurium |
+| `RAD51 [dbpedia:BRCA2]` | BRCA2 + RAD51 | `Gene::675` + `Gene::5888` | different genes; they *interact*, they are not the same |
+| `Estrone [dbpedia:Estropipate]` | Estrone + Estropipate | `DB00655` + `DB04574` | estropipate is a piperazine sulfate salt, a different compound |
+| `LGALS2 [dbpedia:Galectin-3]` | LGALS2 + LGALS3 | `Gene::3957` + `Gene::3958` | different genes |
+| `HLA-A [dbpedia:HLA-A]` | HLA-A + HLA-E + HLA-H + HLA-J | `Gene::3105`, `3133`, `3136` | different loci; HLA-H/J are pseudogenes |
+
+The same region in Simple Merge, with identity intact:
+
+```
+Cisatracurium Besylate [hetionet:DB00565]   src: Compound::DB00565
+Atracurium             [hetionet:DB00732]   src: Compound::DB00732
+HLA-A                  [hetionet:3105]      src: Gene::3105
+HLA-E                  [hetionet:3133]      src: Gene::3133
+LGALS2                 [hetionet:3957]      src: Gene::3957
+LGALS3                 [hetionet:3958]      src: Gene::3958
+```
+
+**Every false merge routes through a `dbpedia:` IRI.** The Hetionet/DRKG-native entities merge
+correctly; the damage enters through the DBpedia join, which follows `sameAs`/redirect links
+that conflate *related* biomedical entities with *identical* ones. This is why these collapses
+carry no `confidenceScore` — they were never scored correspondences in the first place.
+
+### The merged entity's chosen name is unstable
+
+`RAD51 [dbpedia:BRCA2]` and `LGALS2 [dbpedia:Galectin-3]` carry a label from one source and an
+IRI from another. The paper prescribes naming the merged entity after "the entity that belongs
+to the preferred input ontology", but with no preference order encoded in the data, the surviving
+label is effectively arbitrary — so the merged node is not reliably findable under *either*
+original name.
+
+### Why this breaks the paper's equivalence claim
+
+The paper argues simple and full merge are semantically equivalent, so full merge's only gain is
+a smaller entity count. That holds **given a correct alignment**. Here the alignment is wrong, and
+the two strategies diverge sharply in consequence:
+
+- **Simple Merge** records the bad equivalence as an *axiom* — inspectable, scoreable, removable.
+- **Full Merge** has already destroyed the evidence: 208,688 equivalence axioms are gone, and
+  25,630 merge decisions retain no `confidenceScore` at all. A wrong merge is unrecoverable.
+
+For retrieval this is not cosmetic: a query about BRCA2 in Full Merge cannot return anything that
+distinguishes it from RAD51, because no such distinction survives in the graph.
+
+### QA-level probes: inconclusive as run
+
+`compare_merge_rag.py` ran six natural-language probes against both indices. `dp_beam_retrieve`
+returned 39–57 nodes out of ~3,000 and **failed to surface the target entities in 11 of 12 cases** —
+the beam seeds on community summaries rather than leaf entities, so the probes mostly retrieved
+aggregation nodes. The one hit (`LGALS2 [dbpedia:Galectin-3]` in Full Merge) is consistent with
+the table above.
+
+This is a limitation of the probe design, not evidence that the merges do not matter — the
+index-level comparison above is direct. Making the QA comparison meaningful needs entity-anchored
+seeding rather than free-text questions. Raw output: `merge_rag_comparison.json`.
