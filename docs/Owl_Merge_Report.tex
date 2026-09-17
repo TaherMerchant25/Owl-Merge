@@ -1,0 +1,98 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=1.6cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\setlist{nosep,leftmargin=1.2em}
+\setlength{\parskip}{3pt}
+\setlength{\parindent}{0pt}
+\newcommand{\code}[1]{\texttt{\small #1}}
+
+\title{\vspace{-1.2cm}\textbf{Owl-Merge: Simple vs.\ Full Ontology Merge,\\ GraphRAG Evaluation and a Multi-hop SPARQL Question-Answering Engine}}
+\author{Taher Merchant \quad\small\url{https://github.com/TaherMerchant25/Owl-Merge}}
+\date{September 2026}
+
+\begin{document}
+\maketitle
+\vspace{-0.9cm}
+
+\section{Goal}
+Biomedical knowledge is spread over many databases (Hetionet, DRKG, PrimeKG, OptimusKG, OBO ontologies, DBpedia, NCBI Gene), each naming the same gene or drug with a different IRI.
+I received one pharmacological knowledge graph integrated two ways, as OWL files, and asked: \emph{does the merge strategy change what an AI system can correctly answer?}
+The strategies follow Osman, Ben~Yahia \& Diallo, \emph{Ontology integration: approaches and challenging issues}, Information Fusion (2021), DOI \href{https://doi.org/10.1016/j.inffus.2021.01.007}{10.1016/j.inffus.2021.01.007}:
+\textbf{Simple Merge} $O_3 = O_1 \cup O_2 \cup O_A$ keeps equivalent entities separate and links them with \code{owl:equivalentClass} axioms carrying a confidence score;
+\textbf{Full Merge} $O_3 = O_1 \cup O_2$ fuses them into one entity that keeps one IRI and adds the others as labels. The paper argues both are semantically equivalent.
+
+\section{What I built, step by step}
+\begin{enumerate}
+\item \textbf{Streaming OWL extractor} (\code{owl\_extract.py}). The files are 954\,MB and 659\,MB, too big for in-memory libraries such as rdflib. A line-oriented regex parser streams RDF/XML into entity, edge and alignment tables in about 50\,s.
+\item \textbf{Structural analysis} with Python, \code{grep}/\code{awk}: entity and edge counts, equivalence links, class hierarchy, and a same-source ID check (a node holding two IDs from the same database, e.g.\ \code{Gene::675} and \code{Gene::5888}).
+\item \textbf{GraphRAG evaluation with WeamRAG}, a hierarchical GraphRAG framework (GMM clustering, LLM community summaries, beam search). \code{build\_weamrag\_input.py} samples matched 3,000-node subgraphs from the same seed drugs and genes and converts them to WeamRAG's JSONL input; entity names carry their source (\code{HLA-A [hetionet:3105]}) so WeamRAG does not silently re-merge the Simple graph. Both indices were built locally (Llama~3.1~8B via Ollama, nomic-embed-text, Milvus Lite, SQLite).
+\item \textbf{Question-answering test} (\code{compare\_merge\_rag.py}). The first version failed: embedding-only anchoring reached the target entities in 1 of 12 retrievals. I added entity-anchored seeding, a 10k-character context budget, reasoning-before-verdict prompts, two never-fused control pairs and a no-context control.
+\item \textbf{Multi-hop SPARQL engine} (\code{kg\_engine.py}). Both OWL files are bulk-loaded into embedded on-disk \textbf{Oxigraph} stores (\code{pyoxigraph}); every graph access is a SPARQL~1.1 query.
+\item \textbf{Web application} (\code{web\_app.py}, \code{web/index.html}). A dependency-free Python \code{http.server} backend with a validated JSON API and a plain HTML/CSS/JS page to ask a question against Simple, Full, or both side by side.
+\end{enumerate}
+
+\section{How the SPARQL engine answers a question}
+\begin{enumerate}
+\item \textbf{Retrieval}: question phrases are matched to \code{rdfs:label}s, longest n-gram first, with a single-word fallback (``tamoxifen'' $\rightarrow$ ``tamoxifen citrate'').
+\item \textbf{Identity}: \code{owl:equivalentClass} links, plain or reified \code{owl:Axiom} with \code{pkg:confidenceScore}, are followed only above a threshold (default 0.9). This is how Simple Merge crosses databases.
+\item \textbf{Reasoning}: two entities $\rightarrow$ bidirectional shortest-path search ($\le$3 relation hops); one entity $\rightarrow$ hop-by-hop expansion where type words (``drugs \ldots diseases'') fix the target type per hop and relations are ranked by embedding similarity to the question (e.g.\ \emph{indication} 0.58 followed, \emph{contraindication} 0.50 skipped). The trace is shown.
+\item \textbf{Answer}: Llama~3.1~8B answers only from numbered evidence paths and cites them (\code{[P1]}).
+\item \textbf{Safety checks}: a \emph{WARNING} for nodes fusing two same-source IDs and a \emph{NOTE} when two named entities resolve to one node by label alone.
+\end{enumerate}
+
+\section{Results}
+\begin{center}
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Measure & Simple Merge & Full Merge \\
+\midrule
+Declared entities & 268,654 & 97,581 \\
+Edges & 3,375,438 & 2,531,908 \\
+\code{equivalentClass} links (scored / unscored) & 246,934 (208,688 / 38,246) & 0 \\
+Classes with multiple parents & 36.5\% & 35.2\% \\
+Entities holding $\ge$2 IDs from the same source & \textbf{0} & \textbf{96} \\
+Relations in a matched 3,000-node sample & 38,244 & 114,164 \\
+Triples in Oxigraph store (size) & 5,343,202 (421\,MB) & 3,065,773 (238\,MB) \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{itemize}
+\item \textbf{Full Merge is 63.7\% smaller but fuses different entities.} All 7 hand-checked same-source fusions are real errors: BRCA2+RAD51, atracurium+cisatracurium, estrone+estropipate, LGALS2+LGALS3, HLA-A+HLA-E, SYT11+SYT12, CERS1+GDF1.
+\item \textbf{Errors enter through identity chains.} LGALS2 was linked to Wikidata's LGALS3 at 0.871; HLA-A reaches HLA-E in three links (weakest 0.701). The engine found BRCA2 $\equiv$ \code{dbpedia:RAD51} (unscored) $\equiv$ RAD51 (0.72).
+\item \textbf{GraphRAG passes the error to the LLM.} With no context the model judged all 7 pairs \emph{different}. With Full Merge context it answered \emph{same} for 4 of 5 fused pairs, quoting the fused node as evidence; with Simple Merge context it said \emph{same} once. Small test (7 pairs, one 8B model), so suggestive, not conclusive.
+\item \textbf{The engine shows the difference directly.} ``Are BRCA2 and RAD51 the same gene?'' returns \code{BRCA2 --protein protein--> RAD51} (they interact) on Simple Merge, but only a fused node plus a WARNING on Full Merge. ``How is BRCA2 related to tamoxifen?'' crosses three databases via 0.95 identity links on Simple Merge. Queries take seconds without the LLM.
+\end{itemize}
+
+\section{Technology used}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Data \& standards & OWL, RDF/XML, SPARQL 1.1, reified \code{owl:Axiom} alignments \\
+Triple store & Oxigraph (\code{pyoxigraph} 0.5.11), embedded, on-disk \\
+GraphRAG & WeamRAG, Milvus Lite, SQLite, UMAP/GMM clustering \\
+Models (local) & Ollama: Llama 3.1 8B (answers), nomic-embed-text (relation ranking); NVIDIA TITAN RTX \\
+Backend \& frontend & Python 3 standard library (\code{http.server}), HTML/CSS/JavaScript, no build step \\
+Tooling & Git/GitHub, Playwright (UI testing), VS Code Remote-SSH \\
+\bottomrule
+\end{tabularx}
+
+\section{How to run}
+\begin{verbatim}
+python3 -m venv .venv && .venv/bin/pip install pyoxigraph==0.5.11
+ollama pull llama3.1:8b && ollama pull nomic-embed-text
+.venv/bin/python kg_engine.py load simple && .venv/bin/python kg_engine.py load full
+.venv/bin/python kg_engine.py ask simple "How is BRCA2 related to tamoxifen?"
+.venv/bin/python web_app.py        # open http://127.0.0.1:8780
+\end{verbatim}
+
+\section{Limitations and next steps}
+Only the first two named entities in a question are connected; name matching is exact or single-word, so misspellings (e.g.\ ``metformonin'') do not match; target types come from IRI patterns; the QA test is small. The two OWL files were not built from exactly identical inputs, so some differences reflect inputs rather than strategy.
+Next: review the remaining 89 same-source fusions, add fuzzy entity matching, and evaluate on a larger question set with a stronger model.
+\end{document}

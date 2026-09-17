@@ -231,3 +231,54 @@ the table above.
 This is a limitation of the probe design, not evidence that the merges do not matter — the
 index-level comparison above is direct. Making the QA comparison meaningful needs entity-anchored
 seeding rather than free-text questions. Raw output: `merge_rag_comparison.json`.
+
+---
+
+## Multi-hop SPARQL engine (`kg_engine.py`)
+
+Answers questions directly over the OWL files. Every graph access is a SPARQL query against an
+embedded, on-disk [Oxigraph](https://github.com/oxigraph/oxigraph) store; a local LLM only writes
+the final answer from numbered evidence paths.
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install pyoxigraph==0.5.11
+.venv/bin/python kg_engine.py load simple        # 5,343,202 triples, 37 s, 421 MB
+.venv/bin/python kg_engine.py load full          # 3,065,773 triples, 24 s, 238 MB
+.venv/bin/python kg_engine.py selfcheck
+
+.venv/bin/python kg_engine.py ask simple "How is BRCA2 related to tamoxifen?"
+.venv/bin/python kg_engine.py ask simple "Which drugs are indicated for diseases associated with BRCA2?" --no-llm
+.venv/bin/python kg_engine.py sparql full 'SELECT (COUNT(*) AS ?n) WHERE { ?s ?p ?o }'
+```
+
+**How a question is answered**
+
+1. **Retrieval.** Phrases in the question are matched to `rdfs:label`s, longest first; a leftover
+   word falls back to the shortest labels containing it ("tamoxifen" → "tamoxifen citrate").
+2. **Identity.** `owl:equivalentClass` links, plain or reified with `pkg:confidenceScore`, are
+   followed only above `--min-conf` (default 0.9; `--allow-unscored` to include unscored links).
+   Simple Merge needs these to cross sources; Full Merge has none.
+3. **Reasoning.** Two entities → bidirectional shortest-path search (default ≤ 3 relation hops).
+   One entity → hop-by-hop expansion: type words in the question pick the target type per hop
+   ("drugs … diseases … BRCA2" → disease, then drug), and each hop follows the relations whose
+   embedding similarity to the question is within 0.05 of the best. The choices are printed.
+4. **Answer.** Llama 3.1 8B answers from the evidence only and cites paths like `[P2]`.
+
+**Safety checks printed with every answer**
+
+- `WARNING` — a node holds two IDs from the same source database (a fused entity, e.g. BRCA2 + RAD51).
+- `NOTE` — both named entities resolve to one node by label alone; that node is excluded from the
+  search when other candidates exist.
+
+**What it shows on this data**
+
+| Question | Simple Merge | Full Merge |
+|---|---|---|
+| Are BRCA2 and RAD51 the same gene? | `BRCA2 —protein protein→ RAD51` (they interact); NOTE that `dbpedia:RAD51` is labelled with both names | only answer is one fused node; NOTE + WARNING `Gene::5888, Gene::675` |
+| How is BRCA2 related to tamoxifen? | BRCA2 ←associated with— ovarian cancer (PrimeKG) ≡0.95≡ DOID ≡0.95≡ MONDO ←INDICATION— tamoxifen citrate | shorter paths, but every one starts from the fused BRCA2/RAD51 node (WARNING) |
+
+Typical time is 3–6 s without the LLM; the answer adds ~35 s on a shared GPU.
+
+**Known limits:** only the first two entities in a question are connected; partial linking is
+single-word; target types come from IRI substrings; hubs are capped at 500 edges per node; a seed
+with a polluted label (e.g. `dbpedia:RAD51` labelled "BRCA2") is still used in one-entity questions.

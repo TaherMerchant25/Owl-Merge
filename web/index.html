@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Owl-Merge graph questions</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono&family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #F2F4F1;
+  --field: #FFFFFF;
+  --ink: #17242A;
+  --muted: #566469;
+  --rule: #CBD3D0;
+  --rule-strong: #8C9A9E;
+  --simple: #1F6E8C;
+  --full: #8A3F7A;
+  --identity: #1D7A58;
+  --note: #7A4F00;
+  --note-bg: #FAF0D7;
+  --warn: #9E1F2E;
+  --warn-bg: #FAE6E8;
+  --focus: #1F6E8C;
+  --font: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --mono: "Atkinson Hyperlegible Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #12201F; --field: #1A2B2A; --ink: #E3EBE8; --muted: #A3B2AE;
+    --rule: #2E403E; --rule-strong: #5E726E; --simple: #6FB7D3; --full: #D39BC7;
+    --identity: #6CCB9F; --note: #F0C674; --note-bg: #33291A; --warn: #F2A0A8;
+    --warn-bg: #3A1E22; --focus: #6FB7D3;
+  }
+}
+* { box-sizing: border-box; }
+html { font-family: var(--font); background: var(--paper); color: var(--ink); line-height: 1.5; }
+body { margin: 0; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.masthead, main, .footer { max-width: 80rem; margin: 0 auto; padding-inline: clamp(1rem, 4vw, 2.5rem); }
+.masthead { padding-top: 1.5rem; }
+.product { margin: 0; font-size: .9375rem; font-weight: 700; color: var(--muted); }
+
+/* Question */
+.ask { max-width: 54rem; padding-block: 2.25rem 2rem; }
+.ask-label { display: block; margin-bottom: 1rem; font-size: clamp(1.75rem, 3.4vw, 2.375rem); font-weight: 700; line-height: 1.12; letter-spacing: -.012em; }
+.ask-row { display: flex; gap: .5rem; }
+#question { flex: 1; min-width: 0; padding: .75rem 1rem; font-size: 1.25rem; background: var(--field); border: 2px solid var(--rule-strong); border-radius: 6px; }
+#question:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 30%, transparent); }
+#submit { padding: .75rem 1.6rem; font-size: 1.125rem; font-weight: 700; color: var(--paper); background: var(--ink); border: 0; border-radius: 6px; cursor: pointer; }
+#submit:disabled { opacity: .55; cursor: progress; }
+.ask-hint { max-width: 62ch; margin: .75rem 0 0; color: var(--muted); }
+.examples { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: 1rem; }
+.examples > span { color: var(--muted); }
+.example { padding: .3rem .85rem; font-size: .9375rem; background: none; border: 1px solid var(--rule-strong); border-radius: 999px; cursor: pointer; }
+.example:hover { border-color: var(--ink); }
+
+.options { display: flex; flex-wrap: wrap; align-items: start; gap: 1rem 3rem; margin-top: 1.75rem; }
+.graphs { margin: 0; padding: 0; border: 0; }
+.graphs legend { padding: 0; margin-bottom: .35rem; font-weight: 700; }
+.graphs label { display: inline-flex; align-items: center; gap: .4rem; margin-right: 1.25rem; }
+.graphs input, .settings input[type=checkbox] { accent-color: var(--ink); width: 1.05rem; height: 1.05rem; }
+.graphs label:has(input:disabled) { color: var(--muted); text-decoration: line-through; }
+.settings summary { font-weight: 700; cursor: pointer; }
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .8rem 2rem; max-width: 40rem; margin-top: .6rem; font-size: .9375rem; }
+.settings-grid label { display: flex; flex-direction: column; gap: .3rem; }
+.settings-grid label.check { flex-direction: row; align-items: flex-start; gap: .5rem; }
+.settings-grid label.check input { flex: none; margin-top: .2rem; }
+.settings input[type=number], .settings select { width: 9rem; padding: .35rem .5rem; background: var(--field); border: 1px solid var(--rule-strong); border-radius: 4px; }
+
+/* Results */
+.results { padding-block: 1.75rem 3rem; border-top: 1px solid var(--rule); }
+.results:empty { display: none; }
+.results.compare { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 3rem; }
+@media (max-width: 62rem) { .results.compare { grid-template-columns: minmax(0, 1fr); gap: 3rem; } }
+.column { min-width: 0; padding-top: 1rem; border-top: 4px solid var(--accent); }
+.kg-simple { --accent: var(--simple); }
+.kg-full { --accent: var(--full); }
+.column h2 { margin: 0; font-size: 1.5rem; line-height: 1.2; color: var(--accent); }
+.blurb { margin: .2rem 0 0; color: var(--muted); }
+.status { margin: 1rem 0 0; font-weight: 500; }
+.status.error { max-width: 64ch; color: var(--warn); }
+.column h3 { margin: 2rem 0 .6rem; font-size: 1.0625rem; }
+.answer { max-width: 70ch; margin: 0; font-size: 1.0625rem; white-space: pre-line; }
+.cite { margin: 0 .1rem; padding: 0 .3rem; font-size: .8125rem; font-weight: 700; line-height: 1.4; color: var(--accent); background: none; border: 1px solid var(--accent); border-radius: 4px; vertical-align: .08em; cursor: pointer; }
+
+.alerts { display: grid; gap: .6rem; margin-top: 1.25rem; }
+.alert { max-width: 72ch; padding: .7rem 1rem; background: var(--bg); border-left: 4px solid var(--c); }
+.alert.warn { --c: var(--warn); --bg: var(--warn-bg); }
+.alert.note { --c: var(--note); --bg: var(--note-bg); }
+.alert strong { display: block; color: var(--c); }
+.alert p { margin: .25rem 0 0; }
+
+/* Evidence chains: the one loud element */
+.paths { margin: 0; padding: 0; list-style: none; }
+.paths li { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); gap: .5rem; padding: .75rem .25rem; border-top: 1px solid var(--rule); scroll-margin-top: 1rem; }
+.paths li:first-child { border-top: 0; }
+.pid { padding-top: .4rem; font-weight: 700; color: var(--muted); }
+.chain { display: flex; flex-wrap: wrap; align-items: center; row-gap: .55rem; }
+.node { display: inline-flex; flex-direction: column; max-width: 100%; padding: .3rem .75rem; line-height: 1.2; background: var(--field); border: 1.5px solid var(--rule-strong); border-radius: .8rem; }
+.node-name { font-weight: 700; overflow-wrap: anywhere; }
+.node-src { font-size: .75rem; color: var(--muted); overflow-wrap: anywhere; }
+.node.is-fused { background: var(--warn-bg); border-color: var(--warn); box-shadow: inset 4px 0 0 var(--warn); }
+.node.is-ambiguous { border-style: dashed; border-color: var(--note); }
+.inline-node { flex-direction: row; align-items: baseline; gap: .4rem; margin: 0 .15rem; padding: .05rem .55rem; vertical-align: baseline; }
+.edge { position: relative; display: inline-flex; flex-direction: column; align-items: center; min-width: 5.5rem; margin: 0 .3rem; padding-bottom: .55rem; font-size: .8125rem; font-weight: 500; color: var(--ink); }
+.edge-label { max-width: 14rem; padding: 0 .6rem .1rem; text-align: center; }
+.edge::after { content: ""; position: absolute; left: 0; right: 0; bottom: .3rem; border-top: 2px solid var(--rule-strong); }
+.edge.fwd::after { right: 7px; }
+.edge.back::after { left: 7px; }
+.edge.relation::before { content: ""; position: absolute; bottom: calc(.3rem - 4px); border-block: 5px solid transparent; }
+.edge.fwd::before { right: 0; border-left: 8px solid var(--rule-strong); }
+.edge.back::before { left: 0; border-right: 8px solid var(--rule-strong); }
+.edge.identity { font-weight: 700; color: var(--identity); }
+.edge.identity::after { bottom: .15rem; border-top: 5px double var(--identity); }
+.edge.identity.unscored::after { border-top: 2px dashed var(--identity); }
+.same-note { margin-left: .6rem; font-weight: 700; color: var(--warn); }
+.paths li.flash { animation: flash 1.8s ease-out; }
+@keyframes flash { from { background: color-mix(in srgb, var(--accent) 22%, transparent); } to { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .paths li.flash { animation: none; outline: 2px solid var(--accent); } }
+
+/* Search trace */
+.mode { max-width: 70ch; margin: 0; }
+.hop { margin: 1rem 0 .35rem; font-weight: 500; }
+.relations { display: grid; gap: .3rem; margin: 0; padding: 0; list-style: none; }
+.relations li { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr) auto; align-items: center; gap: .75rem; font-size: .9375rem; color: var(--muted); }
+.relations li.followed { font-weight: 700; color: var(--ink); }
+.bar { height: .5rem; overflow: hidden; background: var(--rule); border-radius: 999px; }
+.bar span { display: block; height: 100%; background: var(--rule-strong); }
+.followed .bar span { background: var(--accent); }
+.edges { font-size: .8125rem; font-weight: 400; color: var(--muted); }
+
+.matches p { margin: .4rem 0; }
+.matches .node { margin: .2rem .35rem .2rem 0; }
+details.sparql { margin-top: 2rem; }
+details.sparql summary { font-weight: 700; cursor: pointer; }
+details.sparql pre { max-height: 16rem; margin: .6rem 0 0; padding: .75rem; overflow: auto; font-family: var(--mono); font-size: .8125rem; background: var(--field); border: 1px solid var(--rule); }
+
+.footer { padding-bottom: 2.5rem; font-size: .875rem; color: var(--muted); }
+.footer p { margin: 0; padding-top: 1.5rem; border-top: 1px solid var(--rule); }
+</style>
+</head>
+<body>
+<header class="masthead">
+  <p class="product">Owl-Merge knowledge graph</p>
+</header>
+
+<main>
+  <form id="ask" class="ask">
+    <label for="question" class="ask-label">Ask about genes, drugs and diseases</label>
+    <div class="ask-row">
+      <input id="question" name="question" type="text" maxlength="500" autocomplete="off" required
+             placeholder="How is BRCA2 related to tamoxifen?">
+      <button id="submit" type="submit">Ask</button>
+    </div>
+    <p class="ask-hint">Answers come only from paths found in the graph. Every path, warning and SPARQL query behind an answer is shown.</p>
+    <div class="examples" id="examples"><span>Try</span></div>
+
+    <div class="options">
+      <fieldset class="graphs">
+        <legend>Graph to search</legend>
+        <label><input type="radio" name="graph" value="simple"> Simple Merge</label>
+        <label><input type="radio" name="graph" value="full"> Full Merge</label>
+        <label><input type="radio" name="graph" value="both" checked> Both, side by side</label>
+      </fieldset>
+      <details class="settings">
+        <summary>Search settings</summary>
+        <div class="settings-grid">
+          <label>Lowest identity-link confidence to follow
+            <input id="min-conf" type="number" min="0" max="1" step="0.05" value="0.9"></label>
+          <label>Relation steps
+            <select id="hops"><option value="">Automatic</option><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
+          <label class="check"><input id="unscored" type="checkbox"> Also follow identity links that have no score</label>
+          <label class="check"><input id="llm" type="checkbox" checked> Write an answer with the local LLM (adds about 30 s)</label>
+        </div>
+      </details>
+    </div>
+  </form>
+
+  <div id="results" class="results" aria-live="polite"></div>
+</main>
+
+<footer class="footer"><p id="footer">Checking which graphs are loaded…</p></footer>
+
+<script>
+const EXAMPLES = [
+  "Are BRCA2 and RAD51 the same gene?",
+  "How is BRCA2 related to tamoxifen?",
+  "Which drugs are indicated for diseases associated with BRCA2?",
+];
+const KG_INFO = {
+  simple: { title: "Simple Merge", blurb: "Sources stay separate, joined by scored identity links." },
+  full: { title: "Full Merge", blurb: "Matching entities are fused into single nodes." },
+};
+const TYPE_WORDS = { drug: "drugs", gene: "genes", disease: "diseases", phenotype: "side effects or symptoms",
+                     pathway: "pathways", anatomy: "tissues", process: "biological processes" };
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const $ = (sel) => document.querySelector(sel);
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+}
+
+const form = $("#ask"), question = $("#question"), submit = $("#submit"), results = $("#results");
+
+for (const q of EXAMPLES) {
+  const b = el("button", "example", q);
+  b.type = "button";
+  b.addEventListener("click", () => { question.value = q; form.requestSubmit(); });
+  $("#examples").append(b);
+}
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const q = question.value.trim();
+  if (!q) return question.focus();
+  const choice = form.elements.graph.value;
+  const kgs = choice === "both" ? ["simple", "full"] : [choice];
+  const settings = {
+    question: q,
+    min_conf: Math.min(1, Math.max(0, parseFloat($("#min-conf").value) || 0.9)),
+    allow_unscored: $("#unscored").checked,
+    hops: $("#hops").value ? parseInt($("#hops").value, 10) : null,
+    llm: $("#llm").checked,
+  };
+  results.replaceChildren();
+  results.classList.toggle("compare", kgs.length > 1);
+  submit.disabled = true;
+  submit.textContent = "Asking…";
+  await Promise.all(kgs.map((kg) => runOne(kg, settings)));
+  submit.disabled = false;
+  submit.textContent = "Ask";
+});
+
+async function runOne(kg, settings) {
+  const col = el("section", `column kg-${kg}`);
+  const h2 = el("h2", null, KG_INFO[kg].title);
+  h2.id = `title-${kg}`;
+  col.setAttribute("aria-labelledby", h2.id);
+  const status = el("p", "status", "Searching the graph…");
+  status.setAttribute("role", "status");
+  col.append(h2, el("p", "blurb", KG_INFO[kg].blurb), status);
+  results.append(col);
+
+  const started = performance.now();
+  const doing = settings.llm ? "Searching the graph and writing an answer" : "Searching the graph";
+  const tick = setInterval(() => {
+    status.textContent = `${doing}… ${Math.round((performance.now() - started) / 1000)} s`;
+  }, 1000);
+  try {
+    const res = await fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...settings, kg }),
+    });
+    const data = await res.json().catch(() => ({ error: `The engine sent an unreadable response (HTTP ${res.status}).` }));
+    if (!res.ok || data.error) return showError(status, data.error || `The engine returned HTTP ${res.status}.`);
+    render(col, status, data, settings);
+  } catch {
+    showError(status, "Can't reach the engine. Start it with: .venv/bin/python web_app.py");
+  } finally {
+    clearInterval(tick);
+  }
+}
+
+function showError(status, message) {
+  status.classList.add("error");
+  status.textContent = /no phrase in the question matches/.test(message)
+    ? "No name in the question matches an entity in this graph. Use an exact gene, drug or disease name, such as BRCA2 or tamoxifen."
+    : message;
+}
+
+function parseAlerts(text) {
+  const fused = new Map(), ambiguous = new Set(), items = [];
+  for (const line of (text || "").split("\n").filter(Boolean)) {
+    let m = line.match(/^WARNING: (.+?) fuses distinct source records (.+?)(?: \(node merge confidence ([\d.]+)\))?$/);
+    if (m) { fused.set(m[1], m[2]); items.push({ kind: "warn", name: m[1], ids: m[2], conf: m[3] }); continue; }
+    m = line.match(/^NOTE: (.+?) carries the labels of both '(.+?)' and '(.+?)'/);
+    if (m) { ambiguous.add(m[1]); items.push({ kind: "note", name: m[1], a: m[2], b: m[3] }); continue; }
+    items.push({ kind: "note", text: line });
+  }
+  return { fused, ambiguous, items };
+}
+
+function node(name, flags, extraClass = "") {
+  const m = name.match(/^(.*) \[([^\]]+)\]$/);
+  const n = el("span", `node ${extraClass}`.trim());
+  n.append(el("span", "node-name", m ? m[1] : name));
+  if (m) n.append(el("span", "node-src", m[2]));
+  if (flags.fused.has(name)) {
+    n.classList.add("is-fused");
+    n.title = `Fused entity: holds ${flags.fused.get(name)}`;
+    n.append(el("span", "sr-only", ", fused entity"));
+  } else if (flags.ambiguous.has(name)) {
+    n.classList.add("is-ambiguous");
+    n.title = "Labelled with both names in the question";
+  }
+  return n;
+}
+
+function edge(step) {
+  if (step.kind === "eq") {
+    const e = el("span", `edge identity${step.conf == null ? " unscored" : ""}`);
+    e.title = "Identity link between databases";
+    e.append(el("span", "edge-label", step.conf == null ? "same as, unscored" : `same as ${step.conf.toFixed(2)}`));
+    return e;
+  }
+  const e = el("span", `edge relation ${step.fwd ? "fwd" : "back"}`);
+  e.append(el("span", "edge-label", step.rel), el("span", "sr-only", step.fwd ? ", pointing right" : ", pointing left"));
+  return e;
+}
+
+function chain(steps, flags) {
+  const row = el("div", "chain");
+  if (steps.length === 1 && steps[0].kind === "same") {
+    row.append(node(steps[0].from, flags), el("span", "same-note", "one node carries both names"));
+    return row;
+  }
+  steps.forEach((s, i) => {
+    if (i === 0) row.append(node(s.from, flags));
+    row.append(edge(s), node(s.to, flags));
+  });
+  return row;
+}
+
+function answerParagraph(text, kg) {
+  const p = el("p", "answer");
+  for (const part of text.split(/(\[P\d+(?:\s*,\s*P\d+)*\])/)) {
+    const ids = part.match(/^\[(P\d+(?:\s*,\s*P\d+)*)\]$/);
+    if (!ids) { p.append(document.createTextNode(part)); continue; }
+    for (const id of ids[1].split(/\s*,\s*/)) {
+      const b = el("button", "cite", id);
+      b.type = "button";
+      b.setAttribute("aria-label", `Show evidence path ${id}`);
+      b.addEventListener("click", () => {
+        const row = document.getElementById(`${kg}-${id}`);
+        if (!row) return;
+        row.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" });
+        row.classList.remove("flash");
+        void row.offsetWidth;
+        row.classList.add("flash");
+        row.focus({ preventScroll: true });
+      });
+      p.append(b);
+    }
+  }
+  return p;
+}
+
+function render(col, status, d, settings) {
+  const flags = parseAlerts(d.warnings);
+  const found = d.n_paths ? `Found ${d.n_paths} evidence path${d.n_paths === 1 ? "" : "s"}` : "Found no connecting evidence";
+  status.textContent = `${found} in ${d.secs} s, using ${d.n_queries} SPARQL queries.`;
+
+  if (flags.items.length) {
+    const box = el("div", "alerts");
+    for (const a of flags.items) {
+      const div = el("div", `alert ${a.kind}`);
+      const p = el("p");
+      if (a.kind === "warn") {
+        div.append(el("strong", null, "Fused entity"));
+        p.append(node(a.name, { fused: new Map(), ambiguous: new Set() }, "inline-node"),
+                 ` holds records of different entities from the same database (${a.ids})` +
+                 (a.conf ? `, merged with confidence ${a.conf}` : "") +
+                 ". Facts attached to it may belong to either entity.");
+      } else if (a.name) {
+        div.append(el("strong", null, "Name overlap"));
+        p.append(node(a.name, { fused: new Map(), ambiguous: new Set() }, "inline-node"),
+                 ` is labelled both “${a.a}” and “${a.b}”. That is a naming overlap, not evidence they are the same.`);
+      } else {
+        p.textContent = a.text;
+      }
+      div.append(p);
+      box.append(div);
+    }
+    col.append(box);
+  }
+
+  if (d.answer) {
+    col.append(el("h3", null, "Answer"));
+    if (d.answer.startsWith("[LLM unavailable")) col.append(el("p", "status error", "The local LLM didn't respond, so only the evidence is shown."));
+    else col.append(answerParagraph(d.answer, d.kg));
+  } else if (settings.llm && !d.n_paths) {
+    col.append(el("h3", null, "Answer"), el("p", "answer", "No answer, because the graph holds no evidence connecting these names."));
+  }
+
+  if (d.n_paths) {
+    col.append(el("h3", null, `Evidence (${d.n_paths})`));
+    const ol = el("ol", "paths");
+    d.paths.forEach((steps, i) => {
+      const li = el("li");
+      li.id = `${d.kg}-P${i + 1}`;
+      li.tabIndex = -1;
+      li.append(el("span", "pid", `P${i + 1}`), chain(steps, flags));
+      ol.append(li);
+    });
+    col.append(ol);
+  }
+
+  col.append(el("h3", null, "How it searched"));
+  const conf = `Identity links were followed when scored ${settings.min_conf} or higher${settings.allow_unscored ? ", and when unscored" : ""}.`;
+  col.append(el("p", "mode", d.mode === "path"
+    ? `Two names matched, so it looked for the shortest chains between them, up to ${d.hops} relation steps. ${conf}`
+    : `One name matched, so it expanded outward ${d.hops} relation step${d.hops === 1 ? "" : "s"}, following the relations closest in meaning to the question. ${conf}`));
+  for (const [hop, type, rows] of d.trace || []) {
+    col.append(el("p", "hop", type ? `Step ${hop}: looking for ${TYPE_WORDS[type] || type}` : `Step ${hop}`));
+    const ul = el("ul", "relations");
+    for (const [text, fwd, score, n, chosen] of rows) {
+      const li = el("li", chosen ? "followed" : "");
+      const bar = el("span", "bar");
+      bar.setAttribute("aria-hidden", "true");
+      const fill = el("span");
+      fill.style.width = `${Math.max(4, Math.min(100, score * 100)).toFixed(0)}%`;
+      bar.append(fill);
+      li.append(bar, el("span", null, `${score.toFixed(2)} ${fwd ? "" : "(inverse) "}${text}`),
+                el("span", "edges", `${n} edge${n === 1 ? "" : "s"}, ${chosen ? "followed" : "skipped"}`));
+      ul.append(li);
+    }
+    col.append(ul);
+  }
+
+  col.append(el("h3", null, "Matched names"));
+  const matches = el("div", "matches");
+  for (const [phrase, names] of d.linked) {
+    const p = el("p");
+    p.append(`“${phrase}” matched ${names.length} node${names.length === 1 ? "" : "s"}: `);
+    for (const n of names) p.append(node(n, flags));
+    matches.append(p);
+  }
+  col.append(matches);
+
+  const details = el("details", "sparql");
+  details.append(el("summary", null, `SPARQL queries (${d.sparql.length})`));
+  for (const q of d.sparql) details.append(el("pre", null, q.trim()));
+  col.append(details);
+}
+
+fetch("/api/health").then((r) => r.json()).then((h) => {
+  const loaded = Object.entries(h.kgs).map(([k, n]) => `${KG_INFO[k].title} (${n.toLocaleString()} named nodes)`);
+  $("#footer").textContent = `Loaded ${loaded.join(" and ")}. Answers are written by ${h.llm}.`;
+  for (const input of form.elements.graph) {
+    const missing = input.value !== "both" ? !(input.value in h.kgs) : Object.keys(h.kgs).length < 2;
+    input.disabled = missing;
+  }
+  if (form.elements.graph.value === "" || [...form.elements.graph].find((i) => i.checked)?.disabled) {
+    [...form.elements.graph].find((i) => !i.disabled).checked = true;
+  }
+}).catch(() => {
+  $("#footer").textContent = "Can't reach the engine. Start it with: .venv/bin/python web_app.py";
+});
+</script>
+</body>
+</html>
